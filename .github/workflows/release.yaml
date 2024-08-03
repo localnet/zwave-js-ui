@@ -1,0 +1,39 @@
+name: Release Container
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Container Tag
+        default: latest  
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: QEMU Static
+        uses: docker/setup-qemu-action@v3
+
+      - name: Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: GitHub Packages
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: OCI Container
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}:${{ github.event.inputs.tag }}
